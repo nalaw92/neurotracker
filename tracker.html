@@ -884,7 +884,6 @@ const HABITS = [
   { key:'stack_evening',  label:'STACK PM',    icon:'🌙' },
   { key:'weed_free',      label:'WEED FREE',   icon:'🌿' },
   { key:'porn_free',      label:'PORN FREE',   icon:'🚫' },
-  { key:'no_doom_scroll', label:'NO SCROLL',   icon:'📵' },
   { key:'gym',            label:'GYM',         icon:'💪' },
 ];
 
@@ -920,7 +919,8 @@ async function sbUpsert(data) {
 // UTILITIES
 // ══════════════════════════════════════════════════════════════
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function daysSince(dateStr) {
@@ -1160,6 +1160,16 @@ function buildTodayStats(c) {
       ${habitsHTML}
     </div>
 
+    ${c.scroll_hours != null ? `
+    <div class="section-title">SCREEN TIME</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:20px;">📱</span>
+      <div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;">SOCIAL MEDIA SCREEN TIME</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:22px;color:${scrollColor(c.scroll_hours)};text-shadow:0 0 15px ${scrollColor(c.scroll_hours)};">${formatScrollHours(c.scroll_hours)}</div>
+      </div>
+    </div>` : ''}
+
     ${c.notes ? `
     <div class="section-title">NOTES</div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;font-size:13px;color:var(--text);line-height:1.6;margin-bottom:20px;">${c.notes}</div>` : ''}
@@ -1219,6 +1229,27 @@ function buildCheckinForm(existing) {
     <div class="section-title" style="margin-top:4px;">COGNITIVE METRICS</div>
     ${metricsHTML}
 
+    <div class="section-title">📱 SOCIAL MEDIA SCREEN TIME</div>
+    <div class="metric-row" style="--mc:#ff6b00;margin-bottom:20px;">
+      <div>
+        <div class="metric-label">SCROLL / ROTTING TIME</div>
+        <div class="metric-sub">Total time across all social & scroll apps today — check iPhone Screen Time</div>
+        <div class="slider-row">
+          <span class="slider-endlabel">0h</span>
+          <input type="range" id="sl_scroll_hours" min="0" max="5" step="0.5"
+            value="${existing ? existing.scroll_hours || 0 : 0}"
+            oninput="onScrollSlider(this.value)" style="--mc:#ff6b00;">
+          <span class="slider-endlabel">5h+</span>
+        </div>
+      </div>
+      <div style="text-align:center;flex-shrink:0;">
+        <div class="slider-val" id="sv_scroll_hours" style="color:#ff6b00;text-shadow:0 0 16px #ff6b00;font-size:18px;">
+          ${existing && existing.scroll_hours != null ? formatScrollHours(existing.scroll_hours) : '0h'}
+        </div>
+        <div class="slider-unit">TODAY</div>
+      </div>
+    </div>
+
     <div class="section-title">HABIT PROTOCOL</div>
     <div class="habits-grid">${habitsHTML}</div>
 
@@ -1240,6 +1271,36 @@ function initSliders() {
     const sl = document.getElementById(`sl_${m.key}`);
     if (sl) onSlider(m.key, sl.value);
   });
+  const sc = document.getElementById('sl_scroll_hours');
+  if (sc) onScrollSlider(sc.value);
+}
+
+function formatScrollHours(h) {
+  const hrs = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  if (hrs === 0) return mins ? `${mins}m` : '0h';
+  return mins ? `${hrs}h ${mins}m` : `${hrs}h`;
+}
+
+function scrollColor(h) {
+  if (h <= 0.5) return '#39ff14';
+  if (h <= 1)   return '#ffd60a';
+  if (h <= 2)   return '#ff6b00';
+  return '#ff2d55';
+}
+
+function onScrollSlider(value) {
+  const h = parseFloat(value);
+  const el = document.getElementById('sv_scroll_hours');
+  const sl = document.getElementById('sl_scroll_hours');
+  const c  = scrollColor(h);
+  if (el) { el.textContent = formatScrollHours(h); el.style.color = c; el.style.textShadow = `0 0 16px ${c}`; }
+  if (sl) {
+    const pct = (h / 5) * 100;
+    sl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+    sl.style.setProperty('--mc', c);
+    sl.style.setProperty('--webkit-slider-thumb-color', c);
+  }
 }
 
 function onSlider(key, value) {
@@ -1268,6 +1329,9 @@ async function submitCheckin() {
   const sh = document.getElementById('sleep_hours');
   data.sleep_hours = sh ? parseFloat(sh.value) : null;
   data.sleep_target = data.sleep_hours >= 7.5;
+  const sc = document.getElementById('sl_scroll_hours');
+  data.scroll_hours = sc ? parseFloat(sc.value) : null;
+  data.no_doom_scroll = data.scroll_hours != null ? data.scroll_hours <= 1 : null;
   HABITS.forEach(h => {
     const cb = document.getElementById(`hb_${h.key}`);
     data[h.key] = cb ? cb.checked : false;
@@ -1465,6 +1529,10 @@ function scoreColor(score) {
   return '#ff2d55';
 }
 
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function buildHeatmap() {
   const scoreMap = {};
   state.checkins.forEach(c => {
@@ -1472,17 +1540,24 @@ function buildHeatmap() {
     if (s) scoreMap[c.date] = parseFloat(s);
   });
 
-  // Build 91-day window ending today, padded to full weeks (Mon start)
   const today = new Date(); today.setHours(0,0,0,0);
-  const dow = (today.getDay() + 6) % 7; // 0=Mon
-  const windowEnd = new Date(today);
-  const windowStart = new Date(today);
-  windowStart.setDate(windowStart.getDate() - dow - 90);
+  // Find this Monday (Mon=0 ... Sun=6)
+  const dayOfWeek = (today.getDay() + 6) % 7;
+  const thisMonday = new Date(today);
+  thisMonday.setDate(today.getDate() - dayOfWeek);
 
-  // Build weeks array
+  // Start 12 weeks before this Monday = 13 columns total
+  const start = new Date(thisMonday);
+  start.setDate(start.getDate() - 12 * 7);
+
+  // End on Sunday of current week
+  const end = new Date(thisMonday);
+  end.setDate(end.getDate() + 6);
+
+  // Build weeks (each column = Mon–Sun)
   const weeks = [];
-  let cur = new Date(windowStart);
-  while (cur <= windowEnd) {
+  let cur = new Date(start);
+  while (cur <= end) {
     const week = [];
     for (let d = 0; d < 7; d++) {
       week.push(new Date(cur));
@@ -1494,10 +1569,10 @@ function buildHeatmap() {
   const dayLabels = ['M','T','W','T','F','S','S'];
 
   let cols = '';
-  weeks.forEach((week, wi) => {
+  weeks.forEach((week) => {
     let cells = '';
-    week.forEach((day, di) => {
-      const ds = day.toISOString().split('T')[0];
+    week.forEach((day) => {
+      const ds = localDateStr(day);
       const score = scoreMap[ds];
       const isFuture = day > today;
       const color = isFuture ? 'rgba(255,255,255,0.03)' : scoreColor(score);
@@ -1607,7 +1682,7 @@ function buildCorrelations() {
     { key:'gym',            label:'GYM DAYS',         icon:'💪', metric:'morning_energy',  mLabel:'Morning Energy' },
     { key:'weed_free',      label:'WEED FREE DAYS',   icon:'🌿', metric:'motivation',      mLabel:'Motivation' },
     { key:'weed_free',      label:'WEED FREE DAYS',   icon:'🌿', metric:'sleep_quality',   mLabel:'Sleep Quality' },
-    { key:'no_doom_scroll', label:'NO SCROLL DAYS',   icon:'📵', metric:'focus',           mLabel:'Focus' },
+    { key:'no_doom_scroll', label:'LOW SCROLL DAYS (≤1h)',   icon:'📵', metric:'focus',           mLabel:'Focus' },
     { key:'sleep_target',   label:'7.5H+ SLEEP DAYS', icon:'😴', metric:'morning_energy',  mLabel:'Morning Energy' },
     { key:'sleep_target',   label:'7.5H+ SLEEP DAYS', icon:'😴', metric:'motivation',      mLabel:'Motivation' },
     { key:'stack_morning',  label:'FULL STACK DAYS',  icon:'💊', metric:'focus',           mLabel:'Focus' },
