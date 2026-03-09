@@ -1439,7 +1439,222 @@ function renderProgress() {
       </div>`;
   });
 
-  el.innerHTML = countersHTML + msHTML + wowHTML + habHTML;
+  // ── HEATMAP ──
+  const heatmapHTML = buildHeatmap();
+
+  // ── WEEKLY SUMMARY ──
+  const summaryHTML = buildWeeklySummary();
+
+  // ── CORRELATIONS ──
+  const correlHTML = buildCorrelations();
+
+  el.innerHTML = heatmapHTML + countersHTML + msHTML + summaryHTML + correlHTML + wowHTML + habHTML;
+}
+
+// ══════════════════════════════════════════════════════════════
+// HEATMAP
+// ══════════════════════════════════════════════════════════════
+function scoreColor(score) {
+  if (!score || score == 0) return 'rgba(255,255,255,0.06)';
+  const s = parseFloat(score);
+  if (s >= 9)   return '#00ffe1';
+  if (s >= 8)   return '#39ff14';
+  if (s >= 7)   return '#ffd60a';
+  if (s >= 6)   return '#ff6b00';
+  return '#ff2d55';
+}
+
+function buildHeatmap() {
+  const scoreMap = {};
+  state.checkins.forEach(c => {
+    const s = calcScore(c);
+    if (s) scoreMap[c.date] = parseFloat(s);
+  });
+
+  // Build 91-day window ending today, padded to full weeks (Mon start)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = (today.getDay() + 6) % 7; // 0=Mon
+  const windowEnd = new Date(today);
+  const windowStart = new Date(today);
+  windowStart.setDate(windowStart.getDate() - dow - 90);
+
+  // Build weeks array
+  const weeks = [];
+  let cur = new Date(windowStart);
+  while (cur <= windowEnd) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      week.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  const dayLabels = ['M','T','W','T','F','S','S'];
+
+  let cols = '';
+  weeks.forEach((week, wi) => {
+    let cells = '';
+    week.forEach((day, di) => {
+      const ds = day.toISOString().split('T')[0];
+      const score = scoreMap[ds];
+      const isFuture = day > today;
+      const color = isFuture ? 'rgba(255,255,255,0.03)' : scoreColor(score);
+      const tip = score ? `${ds}: ${score.toFixed(1)}` : ds;
+      const border = ds === todayStr() ? '1px solid rgba(0,255,225,0.6)' : '1px solid transparent';
+      cells += `<div title="${tip}" style="width:13px;height:13px;border-radius:2px;background:${color};border:${border};flex-shrink:0;cursor:${score?'pointer':'default'};transition:transform 0.1s;" onmouseover="this.style.transform='scale(1.4)'" onmouseout="this.style.transform='scale(1)'"></div>`;
+    });
+    cols += `<div style="display:flex;flex-direction:column;gap:3px;">${cells}</div>`;
+  });
+
+  const dayAxis = dayLabels.map(l =>
+    `<div style="height:13px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);line-height:13px;">${l}</div>`
+  ).join('');
+
+  const totalEntries = state.checkins.length;
+  const avgScore = totalEntries
+    ? (state.checkins.reduce((s,c) => s + (parseFloat(calcScore(c))||0), 0) / totalEntries).toFixed(1)
+    : '—';
+
+  return `
+    <div class="section-title">COGNITIVE HEATMAP — 90 DAY JOURNEY</div>
+    <div class="chart-wrap" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;overflow-x:auto;padding-bottom:4px;">
+        <div style="display:flex;flex-direction:column;gap:3px;margin-top:0;flex-shrink:0;">${dayAxis}</div>
+        <div style="display:flex;gap:3px;flex-shrink:0;">${cols}</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);">LOW</span>
+          ${['#ff2d55','#ff6b00','#ffd60a','#39ff14','#00ffe1'].map(c=>`<div style="width:13px;height:13px;border-radius:2px;background:${c};"></div>`).join('')}
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);">PEAK</span>
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);">
+          ${totalEntries} entries · all-time avg <span style="color:${scoreColor(avgScore)};">${avgScore}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// WEEKLY SUMMARY
+// ══════════════════════════════════════════════════════════════
+function buildWeeklySummary() {
+  const r7 = last7(state.checkins).sort((a,b) => a.date.localeCompare(b.date));
+  if (r7.length < 3) return '';
+
+  const scores = r7.map(c => ({ date: c.date, score: parseFloat(calcScore(c)) })).filter(x => x.score);
+  if (!scores.length) return '';
+
+  const avg = (scores.reduce((s,x) => s+x.score, 0) / scores.length).toFixed(1);
+  const best  = scores.reduce((a,b) => a.score > b.score ? a : b);
+  const worst = scores.reduce((a,b) => a.score < b.score ? a : b);
+  const tier  = scoreTier(parseFloat(avg));
+
+  const habitSummary = HABITS.map(h => {
+    const done = r7.filter(c => c[h.key]).length;
+    return `${h.icon} ${h.label} ${done}/${r7.length}`;
+  }).join(' · ');
+
+  const dayName = d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d+'T12:00:00').getDay()];
+
+  const startDate = r7[0].date.slice(5).replace('-','/');
+  const endDate   = r7[r7.length-1].date.slice(5).replace('-','/');
+
+  // trend vs prior week
+  const prior = state.checkins.filter(c => {
+    const d = new Date(c.date); const cut = new Date(); cut.setDate(cut.getDate()-7);
+    const cut2 = new Date(); cut2.setDate(cut2.getDate()-14);
+    return d < cut && d >= cut2;
+  });
+  const priorAvg = prior.length
+    ? (prior.reduce((s,c) => s+(parseFloat(calcScore(c))||0),0)/prior.length).toFixed(1)
+    : null;
+  const trendStr = priorAvg
+    ? (parseFloat(avg) >= parseFloat(priorAvg)
+        ? `<span style="color:var(--green);">↑ +${(avg-priorAvg).toFixed(1)} vs last week</span>`
+        : `<span style="color:var(--red);">↓ ${(avg-priorAvg).toFixed(1)} vs last week</span>`)
+    : '';
+
+  return `
+    <div class="section-title" style="margin-top:8px;">WEEKLY SUMMARY — ${startDate} → ${endDate}</div>
+    <div class="card" style="border-color:rgba(0,255,225,0.2);margin-bottom:20px;">
+      <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);"></div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;margin-bottom:16px;">
+        <div style="text-align:center;">
+          <div style="font-family:'Orbitron',monospace;font-size:48px;font-weight:900;color:${tier.color};text-shadow:0 0 30px ${tier.color};line-height:1;">${avg}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:4px;">AVG SCORE</div>
+        </div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:${tier.color};letter-spacing:2px;margin-bottom:8px;">${tier.label} ${trendStr}</div>
+          <div style="font-size:13px;color:var(--text);margin-bottom:5px;">🏆 Best: <strong style="color:var(--green);">${dayName(best.date)} ${best.date.slice(5)} — ${best.score.toFixed(1)}</strong></div>
+          <div style="font-size:13px;color:var(--text);">📉 Worst: <strong style="color:var(--red);">${dayName(worst.date)} ${worst.date.slice(5)} — ${worst.score.toFixed(1)}</strong></div>
+        </div>
+      </div>
+      <div style="padding:10px 14px;background:rgba(0,0,0,0.3);border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);line-height:1.8;">${habitSummary}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CORRELATIONS
+// ══════════════════════════════════════════════════════════════
+function buildCorrelations() {
+  if (state.checkins.length < 5) return '';
+
+  const targets = [
+    { key:'gym',            label:'GYM DAYS',         icon:'💪', metric:'focus',          mLabel:'Focus' },
+    { key:'gym',            label:'GYM DAYS',         icon:'💪', metric:'morning_energy',  mLabel:'Morning Energy' },
+    { key:'weed_free',      label:'WEED FREE DAYS',   icon:'🌿', metric:'motivation',      mLabel:'Motivation' },
+    { key:'weed_free',      label:'WEED FREE DAYS',   icon:'🌿', metric:'sleep_quality',   mLabel:'Sleep Quality' },
+    { key:'no_doom_scroll', label:'NO SCROLL DAYS',   icon:'📵', metric:'focus',           mLabel:'Focus' },
+    { key:'sleep_target',   label:'7.5H+ SLEEP DAYS', icon:'😴', metric:'morning_energy',  mLabel:'Morning Energy' },
+    { key:'sleep_target',   label:'7.5H+ SLEEP DAYS', icon:'😴', metric:'motivation',      mLabel:'Motivation' },
+    { key:'stack_morning',  label:'FULL STACK DAYS',  icon:'💊', metric:'focus',           mLabel:'Focus' },
+  ];
+
+  const insights = [];
+  targets.forEach(t => {
+    const withHabit    = state.checkins.filter(c => c[t.key] && c[t.metric] != null);
+    const withoutHabit = state.checkins.filter(c => !c[t.key] && c[t.metric] != null);
+    if (withHabit.length < 3 || withoutHabit.length < 2) return;
+    const avgWith    = withHabit.reduce((s,c) => s+c[t.metric], 0) / withHabit.length;
+    const avgWithout = withoutHabit.reduce((s,c) => s+c[t.metric], 0) / withoutHabit.length;
+    const delta = avgWith - avgWithout;
+    if (Math.abs(delta) < 0.3) return;
+    insights.push({ ...t, avgWith: avgWith.toFixed(1), avgWithout: avgWithout.toFixed(1), delta, n: withHabit.length });
+  });
+
+  if (!insights.length) return `
+    <div class="section-title" style="margin-top:8px;">HABIT CORRELATIONS</div>
+    <div class="loading" style="animation:none;padding:20px;">NEED MORE DATA — CORRELATIONS UNLOCK AFTER ~7 ENTRIES</div>`;
+
+  // sort by abs delta, deduplicate habit+metric combos, take top 4
+  const seen = new Set();
+  const top = insights
+    .sort((a,b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .filter(i => { const k = i.key+i.metric; if(seen.has(k)) return false; seen.add(k); return true; })
+    .slice(0, 4);
+
+  let cards = '';
+  top.forEach(i => {
+    const positive = i.delta > 0;
+    const color = positive ? 'var(--green)' : 'var(--red)';
+    const arrow = positive ? '↑' : '↓';
+    const sign  = positive ? '+' : '';
+    cards += `
+      <div class="card" style="border-color:${positive?'rgba(57,255,20,0.2)':'rgba(255,45,85,0.2)'};margin-bottom:0;">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:${color};box-shadow:0 0 8px ${color};"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:2px;color:${color};margin-bottom:8px;">${i.icon} ${i.label}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:bold;color:${color};text-shadow:0 0 15px ${color};line-height:1;">${sign}${i.delta.toFixed(1)}</div>
+        <div style="font-family:'Orbitron',monospace;font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-top:2px;margin-bottom:10px;">${arrow} ${i.mLabel.toUpperCase()} AVG</div>
+        <div style="font-size:12px;color:var(--text-dim);">With: <strong style="color:#fff;">${i.avgWith}</strong> &nbsp;|&nbsp; Without: <strong style="color:#fff;">${i.avgWithout}</strong></div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);margin-top:6px;">based on ${i.n} data points</div>
+      </div>`;
+  });
+
+  return `
+    <div class="section-title" style="margin-top:8px;">HABIT CORRELATIONS — WHAT'S ACTUALLY MOVING YOUR NUMBERS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">${cards}</div>`;
 }
 
 // ══════════════════════════════════════════════════════════════
