@@ -509,6 +509,38 @@
 </head>
 <body>
 
+<!-- ═══════ PASSWORD SCREEN ═══════ -->
+<div id="authScreen" style="
+  position:fixed;inset:0;background:var(--bg);z-index:99999;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background-image:radial-gradient(ellipse at 20% 50%, rgba(0,255,225,0.03) 0%, transparent 60%),
+  radial-gradient(ellipse at 80% 20%, rgba(10,132,255,0.04) 0%, transparent 50%);
+">
+  <div style="max-width:380px;width:100%;text-align:center;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:4px;opacity:0.7;margin-bottom:12px;">// PLAYER: NATE // SYSTEM: NEUROTRACKER v1.0</div>
+    <div style="font-family:'Orbitron',monospace;font-size:36px;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 0 30px rgba(0,255,225,0.5);margin-bottom:4px;">NEURO<span style="color:var(--cyan);">TRACKER</span></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;margin-bottom:40px;">SECURE ACCESS REQUIRED</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:30px;">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:10px;text-align:left;">ACCESS CODE</div>
+      <input type="password" id="authInput" placeholder="············"
+        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:3px;
+        color:#fff;font-family:'Share Tech Mono',monospace;font-size:16px;padding:12px 14px;
+        outline:none;letter-spacing:3px;margin-bottom:10px;transition:border-color 0.2s;text-align:center;"
+        onkeydown="if(event.key==='Enter')checkAuth()"
+        onfocus="this.style.borderColor='rgba(0,255,225,0.4)'"
+        onblur="this.style.borderColor='rgba(0,255,225,0.12)'">
+      <div id="authErr" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);margin-bottom:10px;min-height:16px;letter-spacing:1px;"></div>
+      <button onclick="checkAuth()" style="width:100%;padding:13px;background:transparent;border:1px solid var(--cyan);
+        border-radius:4px;color:var(--cyan);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+        letter-spacing:3px;cursor:pointer;transition:all 0.3s;text-shadow:0 0 15px var(--cyan);"
+        onmouseover="this.style.background='rgba(0,255,225,0.1)'"
+        onmouseout="this.style.background='transparent'">
+        AUTHENTICATE
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════ SETUP OVERLAY ═══════ -->
 <div id="setupOverlay" class="setup-overlay" style="display:none;">
   <div class="setup-modal">
@@ -613,6 +645,29 @@ CREATE POLICY "open" ON checkins FOR ALL USING (true) WITH CHECK (true);<button 
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════
+function checkAuth() {
+  const input = document.getElementById('authInput').value;
+  const hash  = btoa(unescape(encodeURIComponent(input)));
+  if (hash === btoa(unescape(encodeURIComponent('SupraNeuro@92')))) {
+    sessionStorage.setItem('nt_auth', '1');
+    document.getElementById('authScreen').style.display = 'none';
+  } else {
+    const err = document.getElementById('authErr');
+    err.textContent = '⚠ ACCESS DENIED — INVALID CODE';
+    document.getElementById('authInput').value = '';
+    setTimeout(() => err.textContent = '', 2500);
+  }
+}
+
+if (sessionStorage.getItem('nt_auth') !== '1') {
+  document.getElementById('authScreen').style.display = 'flex';
+} else {
+  document.getElementById('authScreen').style.display = 'none';
+}
+
 // ══════════════════════════════════════════════════════════════
 // CONSTANTS & CONFIG
 // ══════════════════════════════════════════════════════════════
