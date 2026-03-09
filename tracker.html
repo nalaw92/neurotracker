@@ -619,6 +619,7 @@ CREATE POLICY "open" ON checkins FOR ALL USING (true) WITH CHECK (true);<button 
     <button class="tab" onclick="switchTab('progress', this)">📊 PROGRESS</button>
     <button class="tab" onclick="switchTab('trends', this)">📈 TRENDS</button>
     <button class="tab" onclick="switchTab('history', this)">🗂 HISTORY</button>
+    <button class="tab" onclick="switchTab('stack', this)">💊 STACK</button>
     <button class="tab" onclick="switchTab('neuro', this)">🧠 NEURO OS</button>
     <button class="tab tab-config" onclick="showSetup()">⚙ CONFIG</button>
   </div>
@@ -627,6 +628,182 @@ CREATE POLICY "open" ON checkins FOR ALL USING (true) WITH CHECK (true);<button 
   <div id="panel-progress" class="panel"><div class="loading">LOADING DATA...</div></div>
   <div id="panel-trends" class="panel"><div class="loading">LOADING DATA...</div></div>
   <div id="panel-history" class="panel"><div class="loading">LOADING DATA...</div></div>
+
+  <!-- STACK TAB -->
+  <div id="panel-stack" class="panel">
+
+    <div style="text-align:center;margin-bottom:30px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:4px;margin-bottom:6px;">// NATE'S PROTOCOL</div>
+      <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 0 30px rgba(0,255,225,0.4);">S-TIER <span style="color:var(--cyan);">STACK</span></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;margin-top:6px;">NEUROPLASTICITY · DOPAMINE RECOVERY · COGNITIVE PERFORMANCE</div>
+    </div>
+
+    <!-- 7AM -->
+    <div class="section-title">🌅 7:00 AM — FASTED</div>
+    <div class="card" style="border-color:rgba(255,45,85,0.25);margin-bottom:20px;">
+      <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--red);box-shadow:0 0 8px var(--red);"></div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--red);letter-spacing:2px;margin-bottom:6px;">LEVOTHYROXINE</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.6;">Prescribed thyroid medication. Must be taken alone on empty stomach for proper absorption.</div>
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);text-align:right;white-space:nowrap;">Rx DOSE</div>
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(255,45,85,0.07);border:1px solid rgba(255,45,85,0.2);border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:1px;">
+        ⚠ FIRST. NOTHING ELSE. Wait 30–60 min before food or any supplements.
+      </div>
+    </div>
+
+    <!-- 8AM -->
+    <div class="section-title">☀️ 8:00 AM — MORNING STACK (WITH BREAKFAST)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+
+      <div class="card" style="border-color:rgba(0,255,225,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:2px;margin-bottom:4px;">LION'S MANE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">500mg — Dose 1 of 2</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Neuroplasticity, memory, NGF stimulation. Literally growing new neural connections.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--cyan);background:rgba(0,255,225,0.07);border:1px solid rgba(0,255,225,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">FULL EFFECT: 8–12 WEEKS</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(57,255,20,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--green);box-shadow:0 0 8px var(--green);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--green);letter-spacing:2px;margin-bottom:4px;">L-THEANINE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">200mg</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Calm focus, smooths caffeine edge. No jitters, sustained attention.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">NOTICEABLE: WEEK 1</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,214,10,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--yellow);letter-spacing:2px;margin-bottom:4px;">RHODIOLA ROSEA</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">500mg</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Stress resilience, mental fatigue resistance. Blocks cortisol from hijacking working memory.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--yellow);background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">NOTICEABLE: WEEK 1–2</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(0,255,225,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:2px;margin-bottom:4px;">BACOPA MONNIERI</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">300mg</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Memory consolidation & retention. Things start sticking after 8+ weeks of consistent dosing.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--cyan);background:rgba(0,255,225,0.07);border:1px solid rgba(0,255,225,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">FULL EFFECT: 8–12 WEEKS</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(191,90,242,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--purple);box-shadow:0 0 8px var(--purple);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--purple);letter-spacing:2px;margin-bottom:4px;">L-TYROSINE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">500mg</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Dopamine & norepinephrine precursor. Motivation, drive, task initiation. Critical for cleanse.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--purple);background:rgba(191,90,242,0.07);border:1px solid rgba(191,90,242,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">NOTICEABLE: WEEK 1–2</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(10,132,255,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--blue);box-shadow:0 0 8px var(--blue);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--blue);letter-spacing:2px;margin-bottom:4px;">PHOSPHATIDYLSERINE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">300mg</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Cortisol control, neuroprotection. Blunts stress hormone spikes during high-pressure situations.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--blue);background:rgba(10,132,255,0.07);border:1px solid rgba(10,132,255,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">FULL EFFECT: 3–4 WEEKS</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(57,255,20,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--green);box-shadow:0 0 8px var(--green);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--green);letter-spacing:2px;margin-bottom:4px;">CREATINE MONOHYDRATE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">5g — mix into energy drink</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Brain ATP energy, cognitive performance, memory. Saturates over 3–4 weeks. Don't skip.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--green);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">FULL SATURATION: DAY 30</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,107,0,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--orange);box-shadow:0 0 8px var(--orange);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--orange);letter-spacing:2px;margin-bottom:4px;">NMN</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">250–500mg — take early in day</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">NAD+ precursor, mitochondrial & brain energy. The 3PM wall becomes a gentle dip instead of a crash.</div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--orange);background:rgba(255,107,0,0.07);border:1px solid rgba(255,107,0,0.15);border-radius:2px;padding:3px 8px;display:inline-block;">FULL EFFECT: 3–4 WEEKS</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,214,10,0.2);grid-column:1/-1;">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--yellow);letter-spacing:2px;margin-bottom:4px;">ASHWAGANDHA KSM-66</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">300mg — Dose 1 of 2</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.5;">Chronic stress & cortisol regulation, sleep quality. Double dose (AM+PM) amplifies cortisol blunting.</div>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--yellow);background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.15);border-radius:2px;padding:3px 8px;white-space:nowrap;align-self:start;">FULL EFFECT: 4 WEEKS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5:30PM -->
+    <div class="section-title">🏋️ 5:30–6:00 PM — EVENING STACK (WITH DINNER)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+
+      <div class="card" style="border-color:rgba(0,255,225,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:2px;margin-bottom:4px;">LION'S MANE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">500mg — Dose 2 of 2</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Continued NGF support & neuroplasticity. The 1g/day split is the target dose for measurable effects.</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(10,132,255,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--blue);box-shadow:0 0 8px var(--blue);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--blue);letter-spacing:2px;margin-bottom:4px;">DHA / OMEGA-3</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">1000mg — with dinner fat</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Brain structure, neuroinflammation, mood. Fat-soluble — must be taken with food for absorption.</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,214,10,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--yellow);letter-spacing:2px;margin-bottom:4px;">VITAMIN D3 + K2</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">5000IU / 100mcg — with dinner</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Mood, immunity, hormonal balance. Fat-soluble — K2 directs D3 calcium to bones not arteries.</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(191,90,242,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--purple);box-shadow:0 0 8px var(--purple);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--purple);letter-spacing:2px;margin-bottom:4px;">MAGNESIUM L-THREONATE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">2g — sleep prep</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">The only form of Mg that crosses the blood-brain barrier. Memory consolidation + deep sleep architecture.</div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,214,10,0.2);grid-column:1/-1;">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;">
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--yellow);letter-spacing:2px;margin-bottom:4px;">ASHWAGANDHA KSM-66</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">300mg — Dose 2 of 2</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.5;">Double dose amplifies cortisol blunting & sleep quality. Mag L-Threonate + evening Ashwagandha is one of the strongest sleep combos in the stack.</div>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--yellow);background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.15);border-radius:2px;padding:3px 8px;white-space:nowrap;align-self:start;">600mg TOTAL/DAY</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10:30PM -->
+    <div class="section-title">🌙 10:30 PM — BEDTIME</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:30px;">
+      <div class="card" style="border-color:rgba(191,90,242,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--purple);box-shadow:0 0 8px var(--purple);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--purple);letter-spacing:2px;margin-bottom:4px;">ZINC PICOLINATE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">30mg</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Immune support, testosterone, sleep hormone regulation. Picolinate form = best absorption.</div>
+      </div>
+      <div class="card" style="border-color:rgba(10,132,255,0.2);">
+        <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--blue);box-shadow:0 0 8px var(--blue);"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--blue);letter-spacing:2px;margin-bottom:4px;">VITAMIN B6 P-5-P</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;">20mg — active form</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;">Neurotransmitter synthesis, amplifies zinc's sleep benefits. P-5-P is the active B6 form — better than regular B6.</div>
+      </div>
+    </div>
+
+    <!-- Warning -->
+    <div style="padding:14px 18px;background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:4px;margin-bottom:20px;">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;color:var(--yellow);letter-spacing:2px;margin-bottom:6px;">⚠ LEVOTHYROXINE INTERACTION NOTE</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;">Mention <strong style="color:#fff;">Bacopa Monnieri</strong> to your prescribing doctor — it can interact with thyroid hormone metabolism with long-term use. Nothing alarming, just good practice to disclose.</div>
+    </div>
+
+  </div>
 
   <div id="panel-neuro" class="panel">
     <div class="card" style="text-align:center;padding:50px 40px;">
