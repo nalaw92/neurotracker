@@ -1568,7 +1568,12 @@ function buildHeatmap() {
 
   const dayLabels = ['M','T','W','T','F','S','S'];
 
-  let cols = '';
+  // Calendar layout: columns = days (Mon–Sun), rows = weeks (oldest top → newest bottom)
+  const headerRow = `<div style="display:flex;gap:3px;margin-bottom:4px;">
+    ${dayLabels.map(l => `<div style="width:16px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);">${l}</div>`).join('')}
+  </div>`;
+
+  let rowsHTML = '';
   weeks.forEach((week) => {
     let cells = '';
     week.forEach((day) => {
@@ -1577,15 +1582,11 @@ function buildHeatmap() {
       const isFuture = day > today;
       const color = isFuture ? 'rgba(255,255,255,0.03)' : scoreColor(score);
       const tip = score ? `${ds}: ${score.toFixed(1)}` : ds;
-      const border = ds === todayStr() ? '1px solid rgba(0,255,225,0.6)' : '1px solid transparent';
-      cells += `<div title="${tip}" style="width:13px;height:13px;border-radius:2px;background:${color};border:${border};flex-shrink:0;cursor:${score?'pointer':'default'};transition:transform 0.1s;" onmouseover="this.style.transform='scale(1.4)'" onmouseout="this.style.transform='scale(1)'"></div>`;
+      const border = ds === todayStr() ? '2px solid rgba(0,255,225,0.8)' : '1px solid transparent';
+      cells += `<div title="${tip}" style="width:16px;height:16px;border-radius:3px;background:${color};border:${border};flex-shrink:0;cursor:${score?'pointer':'default'};transition:transform 0.1s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"></div>`;
     });
-    cols += `<div style="display:flex;flex-direction:column;gap:3px;">${cells}</div>`;
+    rowsHTML += `<div style="display:flex;gap:3px;margin-bottom:3px;">${cells}</div>`;
   });
-
-  const dayAxis = dayLabels.map(l =>
-    `<div style="height:13px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);line-height:13px;">${l}</div>`
-  ).join('');
 
   const totalEntries = state.checkins.length;
   const avgScore = totalEntries
@@ -1595,9 +1596,9 @@ function buildHeatmap() {
   return `
     <div class="section-title">COGNITIVE HEATMAP — 90 DAY JOURNEY</div>
     <div class="chart-wrap" style="margin-bottom:20px;">
-      <div style="display:flex;align-items:flex-start;gap:10px;overflow-x:auto;padding-bottom:4px;">
-        <div style="display:flex;flex-direction:column;gap:3px;margin-top:0;flex-shrink:0;">${dayAxis}</div>
-        <div style="display:flex;gap:3px;flex-shrink:0;">${cols}</div>
+      <div style="overflow-x:auto;padding-bottom:4px;">
+        ${headerRow}
+        ${rowsHTML}
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:6px;">
