@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NATE // NEUROTRACKER v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #070a0f;
+    --bg2: #0d1117;
+    --bg3: #111820;
+    --cyan: #00ffe1;
+    --cyan-dim: rgba(0,255,225,0.15);
+    --green: #39ff14;
+    --red: #ff2d55;
+    --orange: #ff6b00;
+    --yellow: #ffd60a;
+    --purple: #bf5af2;
+    --blue: #0a84ff;
+    --text: #c8d6e5;
+    --text-dim: #4a6070;
+    --border: rgba(0,255,225,0.12);
+    --glow: 0 0 20px rgba(0,255,225,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0,255,225,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(10,132,255,0.04) 0%, transparent 50%),
+      linear-gradient(180deg, #070a0f 0%, #0a0e15 100%);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 40px; position: relative; }
+  .header::after {
+    content: ''; display: block; width: 60%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    margin: 20px auto 0;
+  }
+  .player-tag {
+    font-family: 'Share Tech Mono', monospace; color: var(--cyan);
+    font-size: 11px; letter-spacing: 4px; margin-bottom: 8px; opacity: 0.7;
+  }
+  h1 {
+    font-family: 'Orbitron', monospace; font-size: clamp(24px, 4vw, 42px);
+    font-weight: 900; color: #fff; letter-spacing: 3px;
+    text-shadow: 0 0 30px rgba(0,255,225,0.5), 0 0 60px rgba(0,255,225,0.2);
+  }
+  h1 span { color: var(--cyan); }
+  .subtitle {
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    color: var(--text-dim); letter-spacing: 3px; margin-top: 8px;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px 16px; display: flex; align-items: center; gap: 12px;
+    margin-bottom: 30px; overflow: hidden;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; flex-shrink: 0;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .status-label {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--cyan); white-space: nowrap; letter-spacing: 2px;
+  }
+  .ticker-wrap { overflow: hidden; flex: 1; }
+  .ticker {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--text-dim); white-space: nowrap;
+    display: inline-block; animation: ticker 35s linear infinite;
+  }
+  @keyframes ticker { from { transform: translateX(300px); } to { transform: translateX(-100%); } }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 30px;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .tab {
+    padding: 10px 18px; font-family: 'Orbitron', monospace; font-size: 10px;
+    font-weight: 700; letter-spacing: 2px; cursor: pointer;
+    border: 1px solid transparent; border-bottom: none;
+    background: transparent; color: var(--text-dim); transition: all 0.2s;
+    position: relative; top: 1px;
+  }
+  .tab:hover { color: var(--cyan); border-color: var(--border); }
+  .tab.active {
+    color: var(--cyan); background: var(--bg2);
+    border-color: var(--border); border-bottom-color: var(--bg2);
+    text-shadow: var(--glow);
+  }
+  .tab-config { margin-left: auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 3px; color: var(--cyan); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+
+  /* STAT BAR */
+  .bar-track {
+    height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 3px;
+    background: var(--bar-color, var(--cyan));
+    box-shadow: 0 0 8px var(--bar-color, var(--cyan));
+    transition: width 1.2s ease-out;
+  }
+
+  /* STAT CARD (today stats display) */
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--accent, var(--cyan));
+    box-shadow: 0 0 8px var(--accent, var(--cyan));
+  }
+  .stat-card .stat-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+  }
+  .stat-name {
+    font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 2px; color: var(--accent, var(--cyan));
+  }
+  .stat-value {
+    font-family: 'Share Tech Mono', monospace; font-size: 13px; color: #fff;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+  }
+
+  /* CHECK-IN FORM */
+  .metric-row {
+    display: grid; grid-template-columns: 1fr 64px; gap: 12px; align-items: center;
+    margin-bottom: 12px; padding: 16px 18px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    position: relative; overflow: hidden; transition: border-color 0.2s;
+  }
+  .metric-row:hover { border-color: rgba(0,255,225,0.22); }
+  .metric-row::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--mc, var(--cyan));
+    box-shadow: 0 0 8px var(--mc, var(--cyan));
+  }
+  .metric-label {
+    font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 2px; color: var(--mc, var(--cyan)); margin-bottom: 5px;
+  }
+  .metric-sub {
+    font-size: 11px; color: var(--text-dim); margin-bottom: 10px; line-height: 1.4;
+  }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-endlabel {
+    font-family: 'Share Tech Mono', monospace; font-size: 8px;
+    color: var(--text-dim); white-space: nowrap;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; flex: 1; height: 4px;
+    background: rgba(255,255,255,0.08); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--mc, var(--cyan));
+    box-shadow: 0 0 12px var(--mc, var(--cyan));
+    cursor: pointer; border: 2px solid rgba(0,0,0,0.6);
+  }
+  .slider-val {
+    font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900;
+    color: var(--mc, var(--cyan)); text-shadow: 0 0 16px var(--mc, var(--cyan));
+    text-align: center; line-height: 1;
+  }
+  .slider-unit {
+    font-family: 'Share Tech Mono', monospace; font-size: 8px;
+    color: var(--text-dim); text-align: center; margin-top: 3px;
+  }
+  .sleep-h-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  }
+  .sleep-h-label {
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    color: var(--text-dim); letter-spacing: 1px;
+  }
+  input[type="number"] {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 3px; color: #fff; font-family: 'Share Tech Mono', monospace;
+    font-size: 14px; padding: 4px 8px; width: 64px; text-align: center;
+    outline: none; transition: border-color 0.2s;
+  }
+  input[type="number"]:focus { border-color: rgba(0,255,225,0.4); }
+
+  /* HABITS */
+  .habits-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px; margin-bottom: 24px;
+  }
+  .habit-toggle input[type="checkbox"] { display: none; }
+  .habit-toggle label {
+    display: flex; align-items: center; gap: 8px; padding: 11px 13px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+    letter-spacing: 1px; color: var(--text-dim); user-select: none;
+  }
+  .habit-toggle input:checked + label {
+    border-color: var(--green); color: var(--green);
+    text-shadow: 0 0 8px var(--green); background: rgba(57,255,20,0.06);
+  }
+  .hcheck {
+    width: 14px; height: 14px; border: 1px solid var(--text-dim);
+    border-radius: 2px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s; font-size: 9px; color: transparent;
+  }
+  .habit-toggle input:checked + label .hcheck {
+    border-color: var(--green); background: var(--green); color: #000; font-weight: 900;
+  }
+
+  /* NOTES + SUBMIT */
+  .notes-field {
+    width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-family: 'Rajdhani', sans-serif;
+    font-size: 14px; padding: 12px 16px; resize: vertical; min-height: 80px;
+    outline: none; transition: border-color 0.2s; margin-bottom: 20px;
+  }
+  .notes-field:focus { border-color: rgba(0,255,225,0.3); }
+  .notes-field::placeholder { color: var(--text-dim); }
+  .submit-btn {
+    width: 100%; padding: 16px; background: transparent;
+    border: 1px solid var(--cyan); border-radius: 4px; color: var(--cyan);
+    font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 3px; cursor: pointer; transition: all 0.3s;
+    text-shadow: 0 0 15px var(--cyan);
+  }
+  .submit-btn:hover { background: rgba(0,255,225,0.1); box-shadow: 0 0 24px rgba(0,255,225,0.25); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .edit-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text-dim); font-family: 'Orbitron', monospace; font-size: 8px;
+    letter-spacing: 2px; padding: 6px 12px; cursor: pointer; transition: all 0.2s;
+  }
+  .edit-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* ALERTS */
+  .alert {
+    padding: 12px 16px; border-radius: 4px; font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 1px; margin-bottom: 16px;
+  }
+  .alert-ok { background: rgba(57,255,20,0.08); border: 1px solid rgba(57,255,20,0.3); color: var(--green); }
+  .alert-err { background: rgba(255,45,85,0.08); border: 1px solid rgba(255,45,85,0.3); color: var(--red); }
+
+  /* SCORE DISPLAY */
+  .score-display {
+    text-align: center; padding: 28px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px;
+    position: relative; overflow: hidden;
+  }
+  .score-display::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(0,255,225,0.05) 0%, transparent 70%);
+  }
+  .score-num {
+    font-family: 'Orbitron', monospace; font-size: 72px; font-weight: 900;
+    color: var(--cyan); text-shadow: 0 0 40px rgba(0,255,225,0.6); line-height: 1;
+  }
+  .score-label {
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    letter-spacing: 4px; color: var(--text-dim); margin-top: 8px;
+  }
+  .score-tier {
+    font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
+    color: var(--yellow); letter-spacing: 3px; margin-top: 6px;
+    text-shadow: 0 0 20px rgba(255,214,10,0.5);
+  }
+
+  /* HABIT BADGES */
+  .habit-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 3px; font-family: 'Orbitron', monospace;
+    font-size: 8px; font-weight: 700; letter-spacing: 1px; margin: 3px;
+  }
+  .hb-done { background: rgba(57,255,20,0.1); border: 1px solid rgba(57,255,20,0.3); color: var(--green); }
+  .hb-miss { background: rgba(255,45,85,0.07); border: 1px solid rgba(255,45,85,0.2); color: var(--red); }
+
+  /* COUNTERS */
+  .counters-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+  .counter-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 20px; text-align: center; position: relative; overflow: hidden;
+  }
+  .counter-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--cc, var(--cyan)); box-shadow: 0 0 10px var(--cc, var(--cyan));
+  }
+  .counter-num {
+    font-family: 'Orbitron', monospace; font-size: 52px; font-weight: 900;
+    color: var(--cc, var(--cyan)); text-shadow: 0 0 30px var(--cc, var(--cyan)); line-height: 1;
+  }
+  .counter-unit {
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    color: var(--text-dim); letter-spacing: 3px; margin-top: 4px;
+  }
+  .counter-label {
+    font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 2px; color: var(--cc, var(--cyan)); margin-top: 8px;
+  }
+  .counter-sub { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+
+  /* MILESTONES */
+  .milestone-bar {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .milestone-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+  }
+  .milestone-name {
+    font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 2px; color: var(--cyan);
+  }
+  .milestone-days { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); }
+  .milestone-track { height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+  .milestone-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    box-shadow: 0 0 8px var(--cyan); transition: width 1.2s ease-out;
+  }
+
+  /* WEEK COMPARE */
+  .compare-row {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px;
+    align-items: center; margin-bottom: 8px; padding: 10px 16px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+  }
+  .compare-left { text-align: right; }
+  .compare-right { text-align: left; }
+  .cval {
+    font-family: 'Share Tech Mono', monospace; font-size: 14px;
+  }
+  .c-up { color: var(--green); }
+  .c-dn { color: var(--red); }
+  .c-eq { color: var(--text-dim); }
+  .compare-center {
+    text-align: center; font-family: 'Orbitron', monospace;
+    font-size: 8px; letter-spacing: 1px; color: var(--text-dim);
+  }
+
+  /* HABIT COMPLIANCE STREAKS */
+  .streak-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 4px; margin-bottom: 8px; gap: 16px;
+  }
+  .streak-name {
+    font-family: 'Orbitron', monospace; font-size: 9px;
+    letter-spacing: 2px; color: var(--text-dim); font-weight: 700; flex-shrink: 0;
+  }
+  .streak-dots { display: flex; gap: 5px; }
+  .sdot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .sdot.ok { background: var(--green); box-shadow: 0 0 5px var(--green); }
+  .sdot.no { background: rgba(255,45,85,0.5); }
+  .streak-count {
+    font-family: 'Share Tech Mono', monospace; font-size: 13px; flex-shrink: 0;
+  }
+
+  /* CHARTS */
+  .chart-wrap {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .chart-title {
+    font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 2px; color: var(--text-dim); margin-bottom: 14px;
+  }
+  .chart-select {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 3px; color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; padding: 6px 10px; outline: none; cursor: pointer;
+  }
+  .chart-select option { background: var(--bg2); }
+
+  /* HISTORY TABLE */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .history-table th {
+    font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px;
+    color: var(--text-dim); text-align: left; padding: 8px 10px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .history-table td {
+    font-family: 'Share Tech Mono', monospace; padding: 9px 10px;
+    border-bottom: 1px solid rgba(0,255,225,0.04); color: var(--text);
+  }
+  .history-table tr:hover td { background: rgba(0,255,225,0.025); }
+
+  /* LOADING */
+  .loading {
+    text-align: center; padding: 40px; font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; color: var(--text-dim); letter-spacing: 3px;
+  }
+
+  /* SETUP OVERLAY */
+  .setup-overlay {
+    position: fixed; inset: 0; background: rgba(7,10,15,0.97);
+    z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+    overflow-y: auto;
+  }
+  .setup-modal {
+    max-width: 620px; width: 100%; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 4px; padding: 40px;
+  }
+  .setup-title {
+    font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900;
+    color: var(--cyan); text-shadow: var(--glow); margin-bottom: 6px; letter-spacing: 3px;
+  }
+  .setup-sub {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--text-dim); letter-spacing: 2px; margin-bottom: 28px;
+  }
+  .setup-step {
+    display: flex; gap: 12px; margin-bottom: 10px;
+    font-size: 13px; color: var(--text); line-height: 1.5;
+  }
+  .step-num {
+    font-family: 'Orbitron', monospace; font-size: 9px; color: var(--cyan);
+    background: rgba(0,255,225,0.1); border: 1px solid rgba(0,255,225,0.2);
+    border-radius: 2px; padding: 2px 7px; flex-shrink: 0; margin-top: 2px;
+  }
+  .setup-code {
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,225,0.1);
+    border-radius: 3px; padding: 14px 16px;
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--text-dim); white-space: pre-wrap; line-height: 1.7;
+    margin: 12px 0 20px; position: relative;
+  }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,255,225,0.1); border: 1px solid rgba(0,255,225,0.2);
+    border-radius: 2px; color: var(--cyan); font-family: 'Orbitron', monospace;
+    font-size: 8px; letter-spacing: 1px; padding: 4px 8px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: rgba(0,255,225,0.2); }
+  .setup-field { margin-bottom: 18px; }
+  .setup-label {
+    font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 2px;
+    color: var(--text-dim); display: block; margin-bottom: 8px;
+  }
+  .setup-input {
+    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 3px; color: #fff; font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; padding: 10px 14px; outline: none; transition: border-color 0.2s;
+  }
+  .setup-input:focus { border-color: rgba(0,255,225,0.4); }
+  .setup-input::placeholder { color: var(--text-dim); }
+
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .counters-grid { grid-template-columns: 1fr 1fr; }
+    .habits-grid { grid-template-columns: 1fr 1fr; }
+    .streak-dots { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════ SETUP OVERLAY ═══════ -->
+<div id="setupOverlay" class="setup-overlay" style="display:none;">
+  <div class="setup-modal">
+    <div class="setup-title">SYSTEM INIT</div>
+    <div class="setup-sub">// NEUROTRACKER v1.0 — FIRST LAUNCH — DATABASE CONFIG REQUIRED</div>
+
+    <div class="setup-step">
+      <span class="step-num">01</span>
+      <span>Go to <strong style="color:var(--cyan)">supabase.com</strong> → Sign up free → Create New Project (name: <em>neurotracker</em>). Wait ~2min for it to initialize.</span>
+    </div>
+    <div class="setup-step">
+      <span class="step-num">02</span>
+      <span>In your project: click <strong style="color:var(--cyan)">SQL Editor</strong> → New Query → paste and run the SQL below:</span>
+    </div>
+
+    <div class="setup-code" id="sqlBlock">CREATE TABLE checkins (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  date date UNIQUE NOT NULL,
+  morning_energy int2, sleep_quality int2,
+  sleep_hours numeric(3,1), motivation int2,
+  focus int2, stress int2, mood int2,
+  memory int2, social int2,
+  physical_energy int2, craving_resistance int2,
+  stack_morning bool DEFAULT false,
+  stack_evening bool DEFAULT false,
+  weed_free bool DEFAULT false,
+  porn_free bool DEFAULT false,
+  no_doom_scroll bool DEFAULT false,
+  gym bool DEFAULT false,
+  sleep_target bool DEFAULT false,
+  notes text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE checkins ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "open" ON checkins FOR ALL USING (true) WITH CHECK (true);<button class="copy-btn" onclick="copySQL()">COPY</button></div>
+
+    <div class="setup-step">
+      <span class="step-num">03</span>
+      <span>Go to <strong style="color:var(--cyan)">Project Settings → API</strong> → copy your Project URL and anon/public key below:</span>
+    </div>
+
+    <div class="setup-field">
+      <label class="setup-label">SUPABASE PROJECT URL</label>
+      <input type="text" id="setupUrl" class="setup-input" placeholder="https://xxxxxxxxxxxxxxxxxxxx.supabase.co">
+    </div>
+    <div class="setup-field">
+      <label class="setup-label">SUPABASE ANON (PUBLIC) KEY</label>
+      <input type="text" id="setupKey" class="setup-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+    </div>
+
+    <button class="submit-btn" onclick="saveConfig()">INITIALIZE NEUROTRACKER</button>
+    <div id="setupErr" class="alert alert-err" style="display:none;margin-top:14px;"></div>
+  </div>
+</div>
+
+<!-- ═══════ MAIN APP ═══════ -->
+<div class="container" id="mainApp" style="display:none;">
+
+  <div class="header">
+    <div class="player-tag">// PLAYER: NATE // SYSTEM: NEUROTRACKER v1.0 // STATUS: ONLINE</div>
+    <h1>NEURO<span>TRACKER</span></h1>
+    <div class="subtitle">DAILY COGNITIVE CHECK-IN · HABIT TRACKING · PERFORMANCE ANALYTICS</div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <div class="status-label">LIVE</div>
+    <div class="ticker-wrap">
+      <span class="ticker" id="statusTicker">INITIALIZING...</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today', this)">⚡ TODAY</button>
+    <button class="tab" onclick="switchTab('progress', this)">📊 PROGRESS</button>
+    <button class="tab" onclick="switchTab('trends', this)">📈 TRENDS</button>
+    <button class="tab" onclick="switchTab('history', this)">🗂 HISTORY</button>
+    <button class="tab" onclick="switchTab('neuro', this)">🧠 NEURO OS</button>
+    <button class="tab tab-config" onclick="showSetup()">⚙ CONFIG</button>
+  </div>
+
+  <div id="panel-today" class="panel active"><div class="loading">LOADING DATA...</div></div>
+  <div id="panel-progress" class="panel"><div class="loading">LOADING DATA...</div></div>
+  <div id="panel-trends" class="panel"><div class="loading">LOADING DATA...</div></div>
+  <div id="panel-history" class="panel"><div class="loading">LOADING DATA...</div></div>
+
+  <div id="panel-neuro" class="panel">
+    <div class="card" style="text-align:center;padding:50px 40px;">
+      <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--cyan);text-shadow:var(--glow);margin-bottom:10px;letter-spacing:3px;">BRAIN OS v2.0</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:3px;margin-bottom:8px;">SUPPLEMENT STACK · BUFF ANALYSIS · DEBUFF SYSTEM · RECOVERY TIMELINE</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:30px;margin-top:4px;">Full neuroscience breakdown of your S-tier stack — scenarios, comparisons, 90-day projection</div>
+      <a href="../brain_stats.html" target="_blank"
+        style="display:inline-block;padding:14px 32px;border:1px solid var(--cyan);border-radius:4px;color:var(--cyan);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:3px;text-decoration:none;transition:all 0.3s;text-shadow:var(--glow);"
+        onmouseover="this.style.background='rgba(0,255,225,0.1)'"
+        onmouseout="this.style.background='transparent'">
+        LAUNCH BRAIN OS →
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONSTANTS & CONFIG
+// ══════════════════════════════════════════════════════════════
+const CLEANSE_START = '2026-03-09';
+const PREV_BEST = 115;
+
+let SB_URL = localStorage.getItem('nt_url') || '';
+let SB_KEY  = localStorage.getItem('nt_key') || '';
+
+let state = {
+  checkins: [],
+  today: null,
+  editingToday: false,
+  activeTab: 'today'
+};
+
+let charts = {};
+
+// ══════════════════════════════════════════════════════════════
+// METRICS & HABITS DEFINITIONS
+// ══════════════════════════════════════════════════════════════
+const METRICS = [
+  { key:'morning_energy',    label:'MORNING ENERGY',     sub:'Energy on waking — before any stack',                 color:'#ffd60a', lv:'CRASHED',    hv:'WIRED',     rgba:'rgba(255,214,10,0.1)'  },
+  { key:'sleep_quality',     label:'SLEEP QUALITY',      sub:'How restorative was last night\'s sleep?',            color:'#0a84ff', lv:'GARBAGE',    hv:'DEEP REM',  rgba:'rgba(10,132,255,0.1)'  },
+  { key:'motivation',        label:'MOTIVATION / DRIVE', sub:'Desire to initiate and push through tasks',           color:'#bf5af2', lv:'PARALYZED',  hv:'LOCKED IN', rgba:'rgba(191,90,242,0.1)'  },
+  { key:'focus',             label:'FOCUS QUALITY',      sub:'Ability to sustain deep work or study sessions',      color:'#39ff14', lv:'SCATTERED',  hv:'LASER',     rgba:'rgba(57,255,20,0.1)'   },
+  { key:'stress',            label:'STRESS / ANXIETY',   sub:'1 = totally calm · 10 = overwhelmed (lower = better)',color:'#ff2d55', lv:'CALM',       hv:'FRIED',     rgba:'rgba(255,45,85,0.1)',   invert:true },
+  { key:'mood',              label:'MOOD STABILITY',     sub:'Consistency and positivity of mood all day',          color:'#00ffe1', lv:'VOLATILE',   hv:'STABLE',    rgba:'rgba(0,255,225,0.1)'   },
+  { key:'memory',            label:'MEMORY / RECALL',    sub:'Sharpness of recall, things sticking',                color:'#ff6b00', lv:'FOGGY',      hv:'SHARP',     rgba:'rgba(255,107,0,0.1)'   },
+  { key:'social',            label:'SOCIAL CONFIDENCE',  sub:'Drive to engage, communicate, connect',               color:'#c8d6e5', lv:'WITHDRAWN',  hv:'MAGNETIC',  rgba:'rgba(200,214,229,0.1)' },
+  { key:'physical_energy',   label:'PHYSICAL ENERGY',    sub:'Body energy, gym performance, physical drive',        color:'#ff6b00', lv:'DRAINED',    hv:'CHARGED',   rgba:'rgba(255,107,0,0.1)'   },
+  { key:'craving_resistance',label:'CRAVING RESISTANCE', sub:'Resisting weed / porn / scroll — 10 = clean',        color:'#39ff14', lv:'FAILED',     hv:'IRON WILL', rgba:'rgba(57,255,20,0.1)'   }
+];
+
+const HABITS = [
+  { key:'stack_morning',  label:'STACK AM',    icon:'💊' },
+  { key:'stack_evening',  label:'STACK PM',    icon:'🌙' },
+  { key:'weed_free',      label:'WEED FREE',   icon:'🌿' },
+  { key:'porn_free',      label:'PORN FREE',   icon:'🚫' },
+  { key:'no_doom_scroll', label:'NO SCROLL',   icon:'📵' },
+  { key:'gym',            label:'GYM',         icon:'💪' },
+  { key:'sleep_target',   label:'7.5h SLEEP',  icon:'😴' }
+];
+
+// ══════════════════════════════════════════════════════════════
+// SUPABASE API (direct fetch — no SDK needed)
+// ══════════════════════════════════════════════════════════════
+function sbHeaders(extra) {
+  return {
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
+    'Content-Type': 'application/json',
+    ...extra
+  };
+}
+
+async function sbGet(params = '') {
+  const r = await fetch(`${SB_URL}/rest/v1/checkins?${params}`, { headers: sbHeaders() });
+  if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+async function sbUpsert(data) {
+  const r = await fetch(`${SB_URL}/rest/v1/checkins?on_conflict=date`, {
+    method: 'POST',
+    headers: sbHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function daysSince(dateStr) {
+  const s = new Date(dateStr); s.setHours(0,0,0,0);
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.floor((n - s) / 86400000) + 1;
+}
+
+function calcScore(c) {
+  const vals = METRICS.map(m => {
+    const v = c[m.key];
+    if (v == null) return null;
+    return m.invert ? (11 - v) : v;
+  }).filter(v => v != null);
+  if (!vals.length) return null;
+  return (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1);
+}
+
+function scoreTier(s) {
+  if (s >= 9.0) return { label:'◈ PEAK STATE',    color:'#39ff14' };
+  if (s >= 8.0) return { label:'◈ OPTIMIZED',     color:'#00ffe1' };
+  if (s >= 7.0) return { label:'◈ CALIBRATED',    color:'#0a84ff' };
+  if (s >= 6.0) return { label:'◈ NOMINAL',       color:'#ffd60a' };
+  if (s >= 5.0) return { label:'◈ SUBOPTIMAL',    color:'#ff6b00' };
+  return              { label:'◈ CRITICAL',       color:'#ff2d55' };
+}
+
+function getStreak(arr, field) {
+  const sorted = [...arr].sort((a,b) => b.date.localeCompare(a.date));
+  const t = todayStr();
+  let streak = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    const c = sorted[i];
+    if (i === 0) {
+      const expected = new Date(); expected.setDate(expected.getDate() - 0);
+      const yest = new Date(); yest.setDate(yest.getDate() - 1);
+      const expectedStr = expected.toISOString().split('T')[0];
+      const yesterStr  = yest.toISOString().split('T')[0];
+      if (c.date !== t && c.date !== yesterStr) break;
+    } else {
+      const prev = sorted[i-1];
+      const gap = (new Date(prev.date) - new Date(c.date)) / 86400000;
+      if (gap > 1) break;
+    }
+    if (c[field]) streak++; else break;
+  }
+  return streak;
+}
+
+function weekAvg(arr, field, weeksAgo = 0) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const end = new Date(now); end.setDate(end.getDate() - weeksAgo * 7);
+  const start = new Date(end); start.setDate(start.getDate() - 7);
+  const filtered = arr.filter(c => {
+    const d = new Date(c.date);
+    return d >= start && d < end && c[field] != null;
+  });
+  if (!filtered.length) return null;
+  return (filtered.reduce((s,c) => s + (c[field] || 0), 0) / filtered.length).toFixed(1);
+}
+
+function last7(arr) {
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+  return arr.filter(c => new Date(c.date) >= cutoff);
+}
+
+function getNextMilestone(day) {
+  const ms = [
+    { day:7,   label:'First energy shift' },
+    { day:14,  label:'Sleep architecture improving' },
+    { day:30,  label:'Creatine fully saturated' },
+    { day:60,  label:'Bacopa peak effect' },
+    { day:90,  label:'FULL STACK UNLOCK' },
+    { day:116, label:'NEW PERSONAL RECORD' }
+  ];
+  return ms.find(m => m.day > day) || { day:365, label:'LEGENDARY' };
+}
+
+// ══════════════════════════════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════════════════════════════
+function showSetup() {
+  document.getElementById('setupOverlay').style.display = 'flex';
+  document.getElementById('setupUrl').value = SB_URL;
+  document.getElementById('setupKey').value = SB_KEY;
+}
+
+function hideSetup() {
+  document.getElementById('setupOverlay').style.display = 'none';
+}
+
+function copySQL() {
+  const sql = document.getElementById('sqlBlock').innerText.replace('COPY','').trim();
+  navigator.clipboard.writeText(sql).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'COPIED!';
+    setTimeout(() => btn.textContent = 'COPY', 2000);
+  });
+}
+
+async function saveConfig() {
+  const url = document.getElementById('setupUrl').value.trim().replace(/\/$/, '');
+  const key = document.getElementById('setupKey').value.trim();
+  const err = document.getElementById('setupErr');
+
+  if (!url || !key) { err.textContent = '⚠ Both fields required'; err.style.display='block'; return; }
+
+  err.style.display = 'none';
+  try {
+    const r = await fetch(`${url}/rest/v1/checkins?limit=1`, {
+      headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status} — have you run the SQL?`);
+  } catch(e) {
+    err.textContent = `⚠ Connection failed: ${e.message}`;
+    err.style.display = 'block';
+    return;
+  }
+
+  localStorage.setItem('nt_url', url);
+  localStorage.setItem('nt_key', key);
+  SB_URL = url; SB_KEY = key;
+  hideSetup();
+  document.getElementById('mainApp').style.display = 'block';
+  await loadData();
+}
+
+// ══════════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════════
+async function loadData() {
+  try {
+    state.checkins = await sbGet('select=*&order=date.desc&limit=90');
+    state.today = state.checkins.find(c => c.date === todayStr()) || null;
+    updateTicker();
+    renderActiveTab();
+  } catch(e) {
+    document.getElementById('panel-today').innerHTML =
+      `<div class="alert alert-err">Failed to load: ${e.message}</div>`;
+  }
+}
+
+function updateTicker() {
+  const day = daysSince(CLEANSE_START);
+  const next = getNextMilestone(day);
+  const cleanStreak = getStreak(state.checkins, 'weed_free');
+  const pornStreak  = getStreak(state.checkins, 'porn_free');
+  const gymStreak   = getStreak(state.checkins, 'gym');
+  document.getElementById('statusTicker').textContent =
+    `DAY ${day} — DOPAMINE CLEANSE ACTIVE · Weed-free streak: ${cleanStreak}d · ` +
+    `Porn-free streak: ${pornStreak}d · Gym streak: ${gymStreak}d · ` +
+    `Next milestone: DAY ${next.day} — ${next.label} · ` +
+    `Previous best: ${PREV_BEST} days · Stack active · Lion's Mane loading · ` +
+    `Bacopa building... · DAY 90 FULL UNLOCK inbound ·`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  state.activeTab = name;
+  renderActiveTab();
+}
+
+function renderActiveTab() {
+  switch(state.activeTab) {
+    case 'today':    renderToday();    break;
+    case 'progress': renderProgress(); break;
+    case 'trends':   renderTrends();   break;
+    case 'history':  renderHistory();  break;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TODAY TAB
+// ══════════════════════════════════════════════════════════════
+function renderToday() {
+  const el = document.getElementById('panel-today');
+  if (state.today && !state.editingToday) {
+    el.innerHTML = buildTodayStats(state.today);
+  } else {
+    el.innerHTML = buildCheckinForm(state.today);
+    initSliders();
+  }
+}
+
+function buildTodayStats(c) {
+  const score = calcScore(c);
+  const tier  = score ? scoreTier(parseFloat(score)) : { label:'INCOMPLETE', color:'var(--text-dim)' };
+  const day   = daysSince(CLEANSE_START);
+
+  let statsHTML = '';
+  METRICS.forEach(m => {
+    const v = c[m.key];
+    if (v == null) return;
+    const pct = (v / 10) * 100;
+    statsHTML += `
+      <div class="stat-card" style="--accent:${m.color};">
+        <div class="stat-header">
+          <div class="stat-name">${m.label}${m.invert ? ' ↓' : ''}</div>
+          <div class="stat-value">${v}/10</div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="--bar-color:${m.color}; width:${pct}%;"></div>
+        </div>
+      </div>`;
+  });
+
+  let habitsHTML = '';
+  HABITS.forEach(h => {
+    const done = c[h.key];
+    habitsHTML += `<span class="habit-badge ${done?'hb-done':'hb-miss'}">${h.icon} ${h.label}</span>`;
+  });
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div class="section-title" style="margin-bottom:0;">STATS — ${c.date}</div>
+      <button class="edit-btn" onclick="editToday()">EDIT ENTRY</button>
+    </div>
+
+    <div class="score-display">
+      <div class="score-num" style="color:${tier.color};text-shadow:0 0 40px ${tier.color}66;">${score || '—'}</div>
+      <div class="score-label">COGNITIVE SCORE · DAY ${day} OF CLEANSE</div>
+      <div class="score-tier" style="color:${tier.color};text-shadow:0 0 20px ${tier.color}88;">${tier.label}</div>
+      ${c.sleep_hours ? `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;letter-spacing:2px;">SLEEP LOGGED: ${c.sleep_hours}h</div>` : ''}
+    </div>
+
+    <div class="section-title">COGNITIVE METRICS</div>
+    <div class="stats-grid">${statsHTML}</div>
+
+    <div class="section-title">HABIT PROTOCOL</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:16px;margin-bottom:20px;">
+      ${habitsHTML}
+    </div>
+
+    ${c.notes ? `
+    <div class="section-title">NOTES</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;font-size:13px;color:var(--text);line-height:1.6;margin-bottom:20px;">${c.notes}</div>` : ''}
+  `;
+}
+
+function buildCheckinForm(existing) {
+  const day  = daysSince(CLEANSE_START);
+  const edit = !!existing;
+
+  let metricsHTML = '';
+  METRICS.forEach(m => {
+    const v = existing ? (existing[m.key] || 5) : 5;
+    metricsHTML += `
+      <div class="metric-row" style="--mc:${m.color};">
+        <div>
+          <div class="metric-label">${m.label}${m.invert ? '  ↓ lower is better' : ''}</div>
+          <div class="metric-sub">${m.sub}</div>
+          <div class="slider-row">
+            <span class="slider-endlabel">${m.lv}</span>
+            <input type="range" id="sl_${m.key}" min="1" max="10" value="${v}"
+              oninput="onSlider('${m.key}', this.value)" style="--mc:${m.color};">
+            <span class="slider-endlabel">${m.hv}</span>
+          </div>
+          ${m.key === 'sleep_quality' ? `
+          <div class="sleep-h-row">
+            <span class="sleep-h-label">HOURS SLEPT:</span>
+            <input type="number" id="sleep_hours" min="0" max="14" step="0.5"
+              value="${existing ? existing.sleep_hours || 7.5 : 7.5}">
+            <span class="sleep-h-label">h</span>
+          </div>` : ''}
+        </div>
+        <div style="text-align:center;flex-shrink:0;">
+          <div class="slider-val" id="sv_${m.key}" style="color:${m.color};text-shadow:0 0 16px ${m.color};">${v}</div>
+          <div class="slider-unit">/ 10</div>
+        </div>
+      </div>`;
+  });
+
+  let habitsHTML = '';
+  HABITS.forEach(h => {
+    const chk = existing ? existing[h.key] : false;
+    habitsHTML += `
+      <div class="habit-toggle">
+        <input type="checkbox" id="hb_${h.key}" ${chk ? 'checked' : ''}>
+        <label for="hb_${h.key}">
+          <div class="hcheck">✓</div>
+          <span>${h.icon}</span>
+          ${h.label}
+        </label>
+      </div>`;
+  });
+
+  return `
+    <div class="section-title">DAILY CHECK-IN — DAY ${day}${edit ? ' (EDITING)' : ''}</div>
+
+    <div class="section-title" style="margin-top:4px;">COGNITIVE METRICS</div>
+    ${metricsHTML}
+
+    <div class="section-title">HABIT PROTOCOL</div>
+    <div class="habits-grid">${habitsHTML}</div>
+
+    <div class="section-title">NOTES <span style="color:var(--text-dim);font-size:9px;letter-spacing:1px;">OPTIONAL</span></div>
+    <textarea class="notes-field" id="notes_f" placeholder="How are you feeling? Notable observations...">${existing ? existing.notes || '' : ''}</textarea>
+
+    <button class="submit-btn" id="subBtn" onclick="submitCheckin()">
+      ${edit ? 'UPDATE CHECK-IN' : '▶ SUBMIT CHECK-IN'}
+    </button>
+    <div id="subMsg" style="margin-top:12px;"></div>
+    ${edit ? `<div style="margin-top:10px;text-align:center;">
+      <button class="edit-btn" onclick="state.editingToday=false;renderToday();">↩ CANCEL EDIT</button>
+    </div>` : ''}
+  `;
+}
+
+function initSliders() {
+  METRICS.forEach(m => {
+    const sl = document.getElementById(`sl_${m.key}`);
+    if (sl) onSlider(m.key, sl.value);
+  });
+}
+
+function onSlider(key, value) {
+  const sv = document.getElementById(`sv_${key}`);
+  if (sv) sv.textContent = value;
+  const sl = document.getElementById(`sl_${key}`);
+  if (sl) {
+    const m = METRICS.find(x => x.key === key);
+    const pct = ((parseInt(value) - 1) / 9) * 100;
+    const c = m ? m.color : '#00ffe1';
+    sl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+  }
+}
+
+function editToday() { state.editingToday = true; renderToday(); }
+
+async function submitCheckin() {
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true; btn.textContent = 'TRANSMITTING...';
+
+  const data = { date: todayStr() };
+  METRICS.forEach(m => {
+    const sl = document.getElementById(`sl_${m.key}`);
+    data[m.key] = sl ? parseInt(sl.value) : null;
+  });
+  const sh = document.getElementById('sleep_hours');
+  data.sleep_hours = sh ? parseFloat(sh.value) : null;
+  HABITS.forEach(h => {
+    const cb = document.getElementById(`hb_${h.key}`);
+    data[h.key] = cb ? cb.checked : false;
+  });
+  const nf = document.getElementById('notes_f');
+  data.notes = nf ? nf.value.trim() : '';
+
+  try {
+    const result = await sbUpsert(data);
+    const saved  = Array.isArray(result) ? result[0] : result;
+    state.today = saved;
+    state.checkins = [saved, ...state.checkins.filter(c => c.date !== todayStr())];
+    state.editingToday = false;
+    updateTicker();
+    document.getElementById('subMsg').innerHTML =
+      '<div class="alert alert-ok">✓ CHECK-IN LOGGED — DATA SYNCED TO CLOUD</div>';
+    setTimeout(() => renderToday(), 1600);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '▶ SUBMIT CHECK-IN';
+    document.getElementById('subMsg').innerHTML =
+      `<div class="alert alert-err">⚠ ERROR: ${e.message}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROGRESS TAB
+// ══════════════════════════════════════════════════════════════
+function renderProgress() {
+  const el = document.getElementById('panel-progress');
+  const cleanseDay = daysSince(CLEANSE_START);
+
+  // Counters
+  const weedStreak = getStreak(state.checkins, 'weed_free');
+  const pornStreak = getStreak(state.checkins, 'porn_free');
+  const gymStreak  = getStreak(state.checkins, 'gym');
+  const scrollStreak = getStreak(state.checkins, 'no_doom_scroll');
+
+  let countersHTML = `
+    <div class="section-title">DAY COUNTERS & STREAKS</div>
+    <div class="counters-grid">
+      <div class="counter-card" style="--cc:#00ffe1;">
+        <div class="counter-num">${cleanseDay}</div>
+        <div class="counter-unit">DAYS</div>
+        <div class="counter-label">DOPAMINE CLEANSE</div>
+        <div class="counter-sub">Previous record: ${PREV_BEST} days</div>
+      </div>
+      <div class="counter-card" style="--cc:#39ff14;">
+        <div class="counter-num">${weedStreak}</div>
+        <div class="counter-unit">DAYS</div>
+        <div class="counter-label">WEED FREE</div>
+        <div class="counter-sub">REM rebuilding daily</div>
+      </div>
+      <div class="counter-card" style="--cc:#bf5af2;">
+        <div class="counter-num">${pornStreak}</div>
+        <div class="counter-unit">DAYS</div>
+        <div class="counter-label">PORN FREE</div>
+        <div class="counter-sub">Dopamine resetting</div>
+      </div>
+      <div class="counter-card" style="--cc:#ffd60a;">
+        <div class="counter-num">${gymStreak}</div>
+        <div class="counter-unit">DAYS</div>
+        <div class="counter-label">GYM STREAK</div>
+        <div class="counter-sub">Compound effect building</div>
+      </div>
+      <div class="counter-card" style="--cc:#0a84ff;">
+        <div class="counter-num">${scrollStreak}</div>
+        <div class="counter-unit">DAYS</div>
+        <div class="counter-label">NO DOOM SCROLL</div>
+        <div class="counter-sub">Attention span recovering</div>
+      </div>
+      <div class="counter-card" style="--cc:${cleanseDay > PREV_BEST ? '#39ff14' : '#ff6b00'};">
+        <div class="counter-num">${Math.max(0, PREV_BEST + 1 - cleanseDay)}</div>
+        <div class="counter-unit">DAYS UNTIL</div>
+        <div class="counter-label">${cleanseDay > PREV_BEST ? '★ NEW RECORD' : 'NEW RECORD'}</div>
+        <div class="counter-sub">${cleanseDay > PREV_BEST ? `${cleanseDay - PREV_BEST}d past prev best` : `Prev best: ${PREV_BEST}d`}</div>
+      </div>
+    </div>`;
+
+  // Milestones
+  const milestones = [
+    { day:7,   label:'First Energy Shift' },
+    { day:14,  label:'Sleep Architecture Improving' },
+    { day:30,  label:'Creatine Fully Saturated' },
+    { day:60,  label:'Bacopa Peak Effect' },
+    { day:90,  label:'FULL STACK UNLOCK' },
+    { day:116, label:'NEW PERSONAL RECORD' }
+  ];
+
+  let msHTML = '<div class="section-title" style="margin-top:8px;">MILESTONE PROGRESS</div>';
+  milestones.forEach(m => {
+    const pct     = Math.min(100, (cleanseDay / m.day) * 100);
+    const done    = cleanseDay >= m.day;
+    const remain  = m.day - cleanseDay;
+    msHTML += `
+      <div class="milestone-bar">
+        <div class="milestone-header">
+          <div class="milestone-name" style="${done ? 'color:var(--green);' : ''}">
+            ${done ? '✓ ' : ''}DAY ${m.day} — ${m.label}
+          </div>
+          <div class="milestone-days">${done ? 'COMPLETE' : `${remain}d remaining`}</div>
+        </div>
+        <div class="milestone-track">
+          <div class="milestone-fill" style="width:${pct}%;${done ? 'background:linear-gradient(90deg,var(--green),var(--cyan));' : ''}"></div>
+        </div>
+      </div>`;
+  });
+
+  // Week-over-week comparison
+  const cmpMetrics = [
+    { key:'morning_energy', label:'MORNING ENERGY' },
+    { key:'sleep_quality',  label:'SLEEP QUALITY'  },
+    { key:'motivation',     label:'MOTIVATION'     },
+    { key:'focus',          label:'FOCUS'          },
+    { key:'mood',           label:'MOOD'           },
+    { key:'memory',         label:'MEMORY'         },
+    { key:'craving_resistance', label:'CRAVING RES.' }
+  ];
+
+  let wowHTML = `
+    <div class="section-title" style="margin-top:8px;">THIS WEEK vs LAST WEEK</div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-bottom:12px;padding:0 16px;">
+      <div style="text-align:right;font-family:'Orbitron',monospace;font-size:9px;color:var(--green);letter-spacing:2px;">THIS WEEK</div>
+      <div></div>
+      <div style="font-family:'Orbitron',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;">LAST WEEK</div>
+    </div>`;
+
+  cmpMetrics.forEach(cm => {
+    const m    = METRICS.find(x => x.key === cm.key);
+    const tw   = weekAvg(state.checkins, cm.key, 0);
+    const lw   = weekAvg(state.checkins, cm.key, 1);
+    let twClass = 'c-eq', lwClass = 'c-eq', arrow = '→';
+    if (tw && lw) {
+      const better = m && m.invert
+        ? parseFloat(tw) <= parseFloat(lw)
+        : parseFloat(tw) >= parseFloat(lw);
+      const diff = Math.abs(parseFloat(tw) - parseFloat(lw));
+      if (diff > 0.05) {
+        twClass = better ? 'c-up' : 'c-dn';
+        lwClass = better ? 'c-eq' : 'c-up';
+        arrow   = better ? '↑' : '↓';
+      }
+    }
+    wowHTML += `
+      <div class="compare-row">
+        <div class="compare-left"><span class="cval ${twClass}">${tw || '—'} ${tw && lw ? arrow : ''}</span></div>
+        <div class="compare-center">${cm.label}</div>
+        <div class="compare-right"><span class="cval ${lwClass}">${lw || '—'}</span></div>
+      </div>`;
+  });
+
+  // Habit compliance last 7 days
+  const r7 = last7(state.checkins);
+  let habHTML = '<div class="section-title" style="margin-top:8px;">HABIT COMPLIANCE — LAST 7 DAYS</div>';
+  HABITS.forEach(h => {
+    const total = r7.length;
+    const done  = r7.filter(c => c[h.key]).length;
+    const pct   = total ? Math.round(done/total*100) : 0;
+    const color = pct>=80 ? 'var(--green)' : pct>=50 ? 'var(--yellow)' : 'var(--red)';
+    const sorted7 = [...r7].sort((a,b) => a.date.localeCompare(b.date));
+    const dots = sorted7.map(c =>
+      `<div class="sdot ${c[h.key] ? 'ok' : 'no'}" title="${c.date}"></div>`
+    ).join('');
+    habHTML += `
+      <div class="streak-row">
+        <div class="streak-name">${h.icon} ${h.label}</div>
+        <div class="streak-dots">${dots}</div>
+        <div class="streak-count" style="color:${color};">${done}/${total || '—'}</div>
+      </div>`;
+  });
+
+  el.innerHTML = countersHTML + msHTML + wowHTML + habHTML;
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRENDS TAB
+// ══════════════════════════════════════════════════════════════
+function renderTrends() {
+  const el = document.getElementById('panel-trends');
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  if (state.checkins.length < 2) {
+    el.innerHTML = '<div class="loading" style="animation:none;">CHECK IN FOR AT LEAST 2 DAYS TO SEE TREND CHARTS</div>';
+    return;
+  }
+
+  const sorted = [...state.checkins].sort((a,b) => a.date.localeCompare(b.date));
+  const labels = sorted.map(c => c.date.slice(5));
+
+  el.innerHTML = `
+    <div class="section-title">COGNITIVE SCORE TREND</div>
+    <div class="chart-wrap">
+      <div class="chart-title">OVERALL SCORE (0–10)</div>
+      <canvas id="ch_overall" height="90"></canvas>
+    </div>
+
+    <div class="section-title" style="margin-top:8px;">INDIVIDUAL METRIC</div>
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <select class="chart-select" id="metricSel" onchange="updateMetricChart()">
+        ${METRICS.map(m => `<option value="${m.key}">${m.label}</option>`).join('')}
+      </select>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);">30-DAY TREND</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="ch_metric" height="90"></canvas>
+    </div>
+
+    <div class="section-title" style="margin-top:8px;">HABIT COMPLIANCE</div>
+    <div class="chart-wrap">
+      <div class="chart-title">DAILY HABITS — 1 = DONE, 0 = MISSED</div>
+      <canvas id="ch_habits" height="90"></canvas>
+    </div>
+  `;
+
+  const base = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        labels: { color:'#4a6070', font:{ family:'Share Tech Mono', size:10 }, boxWidth:12, padding:14 }
+      },
+      tooltip: {
+        backgroundColor:'#0d1117', borderColor:'rgba(0,255,225,0.2)', borderWidth:1,
+        titleColor:'#00ffe1', bodyColor:'#c8d6e5',
+        titleFont:{ family:'Orbitron', size:10 }, bodyFont:{ family:'Share Tech Mono', size:11 }
+      }
+    },
+    scales: {
+      x: { ticks:{ color:'#4a6070', font:{ family:'Share Tech Mono', size:9 } }, grid:{ color:'rgba(0,255,225,0.04)' } },
+      y: { min:0, max:10, ticks:{ color:'#4a6070', font:{ family:'Share Tech Mono', size:9 }, stepSize:2 }, grid:{ color:'rgba(0,255,225,0.06)' } }
+    }
+  };
+
+  // Overall score chart
+  charts.overall = new Chart(document.getElementById('ch_overall'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'COGNITIVE SCORE',
+        data: sorted.map(c => calcScore(c)),
+        borderColor: '#00ffe1', backgroundColor: 'rgba(0,255,225,0.07)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#00ffe1',
+        tension: 0.3, fill: true
+      }]
+    },
+    options: { ...base }
+  });
+
+  // Store for metric chart updates
+  window._td = { sorted, labels, base };
+  updateMetricChart();
+
+  // Habits bar chart
+  const habitColors = {
+    weed_free:'rgba(57,255,20,0.75)', porn_free:'rgba(0,255,225,0.75)',
+    gym:'rgba(255,214,10,0.75)', no_doom_scroll:'rgba(191,90,242,0.75)',
+    stack_morning:'rgba(10,132,255,0.75)'
+  };
+  const habitDatasets = ['weed_free','porn_free','gym','no_doom_scroll','stack_morning'].map(k => {
+    const h = HABITS.find(x => x.key === k);
+    return {
+      label: h ? h.label : k,
+      data: sorted.map(c => c[k] ? 1 : 0),
+      backgroundColor: habitColors[k] || 'rgba(200,214,229,0.5)',
+      borderRadius: 2
+    };
+  });
+
+  charts.habits = new Chart(document.getElementById('ch_habits'), {
+    type: 'bar',
+    data: { labels, datasets: habitDatasets },
+    options: {
+      ...base,
+      scales: {
+        x: base.scales.x,
+        y: { min:0, max:1, ticks:{ color:'#4a6070', stepSize:1, callback:v => v ? 'YES' : 'NO' }, grid:{ color:'rgba(0,255,225,0.06)' } }
+      }
+    }
+  });
+}
+
+function updateMetricChart() {
+  const sel = document.getElementById('metricSel');
+  if (!sel || !window._td) return;
+  const { sorted, labels, base } = window._td;
+  const key = sel.value;
+  const m = METRICS.find(x => x.key === key);
+  if (!m) return;
+  if (charts.metric) charts.metric.destroy();
+  charts.metric = new Chart(document.getElementById('ch_metric'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: m.label,
+        data: sorted.map(c => c[key]),
+        borderColor: m.color, backgroundColor: m.rgba,
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: m.color,
+        tension: 0.3, fill: true
+      }]
+    },
+    options: { ...base }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// HISTORY TAB
+// ══════════════════════════════════════════════════════════════
+function renderHistory() {
+  const el = document.getElementById('panel-history');
+  if (!state.checkins.length) {
+    el.innerHTML = '<div class="loading" style="animation:none;">NO ENTRIES YET — COMPLETE YOUR FIRST CHECK-IN</div>';
+    return;
+  }
+  const sorted = [...state.checkins].sort((a,b) => b.date.localeCompare(a.date));
+  let rows = '';
+  sorted.forEach(c => {
+    const score = calcScore(c);
+    const tier  = score ? scoreTier(parseFloat(score)) : { color:'var(--text-dim)' };
+    const hbIcons = HABITS.filter(h => c[h.key]).map(h => h.icon).join(' ');
+    rows += `
+      <tr>
+        <td>${c.date}</td>
+        <td style="color:${tier.color};font-size:13px;">${score || '—'}</td>
+        <td>${c.morning_energy || '—'}</td>
+        <td>${c.sleep_quality || '—'}${c.sleep_hours ? ` (${c.sleep_hours}h)` : ''}</td>
+        <td>${c.motivation || '—'}</td>
+        <td>${c.focus || '—'}</td>
+        <td>${c.stress ? `${c.stress} (${11-c.stress} eff.)` : '—'}</td>
+        <td>${c.craving_resistance || '—'}</td>
+        <td>${hbIcons || '—'}</td>
+      </tr>`;
+  });
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="section-title" style="margin-bottom:0;">ENTRY LOG — ${sorted.length} RECORDS</div>
+      <button class="edit-btn" onclick="exportCSV()">EXPORT CSV</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>DATE</th><th>SCORE</th><th>ENERGY</th><th>SLEEP</th>
+            <th>MOTIV.</th><th>FOCUS</th><th>STRESS</th><th>CRAVING</th><th>HABITS</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function exportCSV() {
+  const cols = ['date','morning_energy','sleep_quality','sleep_hours','motivation',
+    'focus','stress','mood','memory','social','physical_energy','craving_resistance',
+    'stack_morning','stack_evening','weed_free','porn_free','no_doom_scroll','gym','sleep_target','notes'];
+  const header = cols.join(',');
+  const rows = state.checkins
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .map(c => cols.map(k => JSON.stringify(c[k] ?? '')).join(','));
+  const csv = [header, ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `neurotracker_${todayStr()}.csv`;
+  a.click();
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  if (!SB_URL || !SB_KEY) {
+    document.getElementById('setupOverlay').style.display = 'flex';
+    return;
+  }
+  document.getElementById('mainApp').style.display = 'block';
+  await loadData();
+}
+
+init();
+</script>
+</body>
+</html>
