@@ -1911,8 +1911,8 @@ function renderHistory() {
     const tier  = score ? scoreTier(parseFloat(score)) : { color:'var(--text-dim)' };
     const hbIcons = HABITS.filter(h => c[h.key]).map(h => h.icon).join(' ');
     rows += `
-      <tr>
-        <td>${c.date}</td>
+      <tr onclick="openEditModal('${c.date}')" title="Click to edit" style="cursor:pointer;">
+        <td style="color:var(--cyan);">${c.date} <span style="font-size:9px;opacity:0.6;">✎</span></td>
         <td style="color:${tier.color};font-size:13px;">${score || '—'}</td>
         <td>${c.morning_energy || '—'}</td>
         <td>${c.sleep_quality || '—'}${c.sleep_hours ? ` (${c.sleep_hours}h)` : ''}</td>
@@ -1921,7 +1921,6 @@ function renderHistory() {
         <td>${c.stress ? `${c.stress} (${11-c.stress} eff.)` : '—'}</td>
         <td>${c.craving_resistance || '—'}</td>
         <td>${hbIcons || '—'}</td>
-        <td><button class="edit-btn" onclick="openEditModal('${c.date}')">EDIT</button></td>
       </tr>`;
   });
 
@@ -1935,7 +1934,7 @@ function renderHistory() {
         <thead>
           <tr>
             <th>DATE</th><th>SCORE</th><th>ENERGY</th><th>SLEEP</th>
-            <th>MOTIV.</th><th>FOCUS</th><th>STRESS</th><th>CRAVING</th><th>HABITS</th><th></th>
+            <th>MOTIV.</th><th>FOCUS</th><th>STRESS</th><th>CRAVING</th><th>HABITS</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
