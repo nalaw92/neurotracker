@@ -281,6 +281,23 @@
   }
   .edit-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 
+  /* HISTORY EDIT MODAL */
+  #historyEditModal {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(7,10,15,0.95); overflow-y: auto; padding: 20px 16px 40px;
+  }
+  #historyEditModal.open { display: block; }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .modal-close {
+    background: transparent; border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text-dim); font-family: 'Orbitron', monospace; font-size: 9px;
+    letter-spacing: 2px; padding: 8px 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+
   /* ALERTS */
   .alert {
     padding: 12px 16px; border-radius: 4px; font-family: 'Share Tech Mono', monospace;
@@ -819,6 +836,17 @@ CREATE POLICY "open" ON checkins FOR ALL USING (true) WITH CHECK (true);<button 
     </div>
   </div>
 
+</div>
+
+<!-- HISTORY EDIT MODAL -->
+<div id="historyEditModal">
+  <div class="container" style="max-width:700px;margin:0 auto;">
+    <div class="modal-header">
+      <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;color:var(--cyan);">EDIT PAST ENTRY</div>
+      <button class="modal-close" onclick="closeEditModal()">✕ CANCEL</button>
+    </div>
+    <div id="historyEditForm"></div>
+  </div>
 </div>
 
 <script>
@@ -1893,6 +1921,7 @@ function renderHistory() {
         <td>${c.stress ? `${c.stress} (${11-c.stress} eff.)` : '—'}</td>
         <td>${c.craving_resistance || '—'}</td>
         <td>${hbIcons || '—'}</td>
+        <td><button class="edit-btn" onclick="openEditModal('${c.date}')">EDIT</button></td>
       </tr>`;
   });
 
@@ -1906,12 +1935,67 @@ function renderHistory() {
         <thead>
           <tr>
             <th>DATE</th><th>SCORE</th><th>ENERGY</th><th>SLEEP</th>
-            <th>MOTIV.</th><th>FOCUS</th><th>STRESS</th><th>CRAVING</th><th>HABITS</th>
+            <th>MOTIV.</th><th>FOCUS</th><th>STRESS</th><th>CRAVING</th><th>HABITS</th><th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+function openEditModal(dateStr) {
+  const existing = state.checkins.find(c => c.date === dateStr) || { date: dateStr };
+  const formHTML = buildCheckinForm(existing);
+  const el = document.getElementById('historyEditForm');
+  // Swap the submit button to use history edit handler
+  el.innerHTML = formHTML
+    .replace('onclick="submitCheckin()"', `onclick="submitHistoryEdit('${dateStr}')"`)
+    .replace(/UPDATE CHECK-IN|▶ SUBMIT CHECK-IN/, 'UPDATE ENTRY')
+    .replace(/↩ CANCEL EDIT.*?<\/div>/s, '');
+  document.getElementById('historyEditModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(initSliders, 50);
+}
+
+function closeEditModal() {
+  document.getElementById('historyEditModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitHistoryEdit(dateStr) {
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true; btn.textContent = 'TRANSMITTING...';
+
+  const data = { date: dateStr };
+  METRICS.forEach(m => {
+    const sl = document.getElementById(`sl_${m.key}`);
+    data[m.key] = sl ? parseInt(sl.value) : null;
+  });
+  const sh = document.getElementById('sleep_hours');
+  data.sleep_hours = sh ? parseFloat(sh.value) : null;
+  data.sleep_target = data.sleep_hours != null ? data.sleep_hours >= 7.5 : null;
+  const sc = document.getElementById('sl_scroll_hours');
+  data.scroll_hours = sc ? parseFloat(sc.value) : null;
+  data.no_doom_scroll = data.scroll_hours != null ? data.scroll_hours <= 1 : null;
+  HABITS.forEach(h => {
+    const cb = document.getElementById(`hb_${h.key}`);
+    data[h.key] = cb ? cb.checked : false;
+  });
+  const nf = document.getElementById('notes_f');
+  data.notes = nf ? nf.value.trim() : '';
+
+  try {
+    const result = await sbUpsert(data);
+    const saved = Array.isArray(result) ? result[0] : result;
+    state.checkins = [saved, ...state.checkins.filter(c => c.date !== dateStr)];
+    document.getElementById('subMsg').innerHTML =
+      '<div class="alert alert-ok">✓ ENTRY UPDATED — DATA SYNCED</div>';
+    setTimeout(() => { closeEditModal(); renderHistory(); }, 1200);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'UPDATE ENTRY';
+    document.getElementById('subMsg').innerHTML =
+      `<div class="alert alert-err">⚠ ERROR: ${e.message}</div>`;
+  }
 }
 
 function exportCSV() {
