@@ -1944,16 +1944,25 @@ function renderHistory() {
 
 function openEditModal(dateStr) {
   const existing = state.checkins.find(c => c.date === dateStr) || { date: dateStr };
-  const formHTML = buildCheckinForm(existing);
-  const el = document.getElementById('historyEditForm');
-  // Swap the submit button to use history edit handler
-  el.innerHTML = formHTML
+  // Prefix all IDs with 'm_' to avoid conflicts with TODAY tab elements
+  let formHTML = buildCheckinForm(existing)
+    .replace(/\bid="sl_/g, 'id="m_sl_')
+    .replace(/\bid="sv_/g, 'id="m_sv_')
+    .replace(/\bid="sleep_hours"/g, 'id="m_sleep_hours"')
+    .replace(/\bid="hb_/g, 'id="m_hb_')
+    .replace(/\bid="notes_f"/g, 'id="m_notes_f"')
+    .replace(/\bid="subBtn"/g, 'id="m_subBtn"')
+    .replace(/\bid="subMsg"/g, 'id="m_subMsg"')
+    .replace(/for="hb_/g, 'for="m_hb_')
+    .replace(/oninput="onSlider\(/g, 'oninput="onSliderM(')
+    .replace(/oninput="onScrollSlider\(this\.value\)"/g, 'oninput="onScrollSliderM(this.value)"')
     .replace('onclick="submitCheckin()"', `onclick="submitHistoryEdit('${dateStr}')"`)
     .replace(/UPDATE CHECK-IN|▶ SUBMIT CHECK-IN/, 'UPDATE ENTRY')
-    .replace(/↩ CANCEL EDIT.*?<\/div>/s, '');
+    .replace(/↩ CANCEL EDIT[\s\S]*?<\/div>/, '');
+  document.getElementById('historyEditForm').innerHTML = formHTML;
   document.getElementById('historyEditModal').classList.add('open');
   document.body.style.overflow = 'hidden';
-  setTimeout(initSliders, 50);
+  setTimeout(initModalSliders, 50);
 }
 
 function closeEditModal() {
@@ -1961,38 +1970,72 @@ function closeEditModal() {
   document.body.style.overflow = '';
 }
 
+function onSliderM(key, value) {
+  const sv = document.getElementById(`m_sv_${key}`);
+  if (sv) sv.textContent = value;
+  const sl = document.getElementById(`m_sl_${key}`);
+  if (sl) {
+    const m = METRICS.find(x => x.key === key);
+    const pct = ((parseInt(value) - 1) / 9) * 100;
+    const c = m ? m.color : '#00ffe1';
+    sl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+  }
+}
+
+function onScrollSliderM(value) {
+  const h = parseFloat(value);
+  const el = document.getElementById('m_sv_scroll_hours');
+  const sl = document.getElementById('m_sl_scroll_hours');
+  const c = scrollColor(h);
+  if (el) { el.textContent = formatScrollHours(h); el.style.color = c; el.style.textShadow = `0 0 16px ${c}`; }
+  if (sl) {
+    const pct = (h / 5) * 100;
+    sl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+    sl.style.setProperty('--mc', c);
+  }
+}
+
+function initModalSliders() {
+  METRICS.forEach(m => {
+    const sl = document.getElementById(`m_sl_${m.key}`);
+    if (sl) onSliderM(m.key, sl.value);
+  });
+  const sc = document.getElementById('m_sl_scroll_hours');
+  if (sc) onScrollSliderM(sc.value);
+}
+
 async function submitHistoryEdit(dateStr) {
-  const btn = document.getElementById('subBtn');
+  const btn = document.getElementById('m_subBtn');
   btn.disabled = true; btn.textContent = 'TRANSMITTING...';
 
   const data = { date: dateStr };
   METRICS.forEach(m => {
-    const sl = document.getElementById(`sl_${m.key}`);
+    const sl = document.getElementById(`m_sl_${m.key}`);
     data[m.key] = sl ? parseInt(sl.value) : null;
   });
-  const sh = document.getElementById('sleep_hours');
+  const sh = document.getElementById('m_sleep_hours');
   data.sleep_hours = sh ? parseFloat(sh.value) : null;
   data.sleep_target = data.sleep_hours != null ? data.sleep_hours >= 7.5 : null;
-  const sc = document.getElementById('sl_scroll_hours');
+  const sc = document.getElementById('m_sl_scroll_hours');
   data.scroll_hours = sc ? parseFloat(sc.value) : null;
   data.no_doom_scroll = data.scroll_hours != null ? data.scroll_hours <= 1 : null;
   HABITS.forEach(h => {
-    const cb = document.getElementById(`hb_${h.key}`);
+    const cb = document.getElementById(`m_hb_${h.key}`);
     data[h.key] = cb ? cb.checked : false;
   });
-  const nf = document.getElementById('notes_f');
+  const nf = document.getElementById('m_notes_f');
   data.notes = nf ? nf.value.trim() : '';
 
   try {
     const result = await sbUpsert(data);
     const saved = Array.isArray(result) ? result[0] : result;
     state.checkins = [saved, ...state.checkins.filter(c => c.date !== dateStr)];
-    document.getElementById('subMsg').innerHTML =
+    document.getElementById('m_subMsg').innerHTML =
       '<div class="alert alert-ok">✓ ENTRY UPDATED — DATA SYNCED</div>';
     setTimeout(() => { closeEditModal(); renderHistory(); }, 1200);
   } catch(e) {
     btn.disabled = false; btn.textContent = 'UPDATE ENTRY';
-    document.getElementById('subMsg').innerHTML =
+    document.getElementById('m_subMsg').innerHTML =
       `<div class="alert alert-err">⚠ ERROR: ${e.message}</div>`;
   }
 }
